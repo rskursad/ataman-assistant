@@ -46,7 +46,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
 
             if (!File.Exists(spec.FilePath))
             {
-                throw new FileNotFoundException("GGUF model dosyası bulunamadı.", spec.FilePath);
+                throw new FileNotFoundException("GGUF model file not found.", spec.FilePath);
             }
 
             // Native C strings are UTF-8.
@@ -57,17 +57,17 @@ public sealed class LlamaDotNetModel : ILanguageModel
             var modelPtr = LlamaModelLoadFromFile(pathBytes, mparams);
             if (modelPtr == IntPtr.Zero)
             {
-                throw new InvalidOperationException("llama_model_load_from_file başarısız oldu (dosya bozuk olabilir).");
+                throw new InvalidOperationException("llama_model_load_from_file failed (the file may be corrupt).");
             }
 
-            Console.Error.WriteLine($"[jllama] model yüklendi: {spec.Id} ({new FileInfo(spec.FilePath).Length} bayt)");
+            Console.Error.WriteLine($"[jllama] model loaded: {spec.Id} ({new FileInfo(spec.FilePath).Length} bytes)");
 
             var vocab = LlamaModelGetVocab(modelPtr);
             var nVocab = LlamaVocabNTokens(vocab);
             if (nVocab < 500 || nVocab > 2_000_000)
             {
                 LlamaModelFree(modelPtr);
-                throw new InvalidOperationException($"Vocab sayısı anormal ({nVocab}) — lib ABI'si uyumsuz olabilir.");
+                throw new InvalidOperationException($"Abnormal vocab count ({nVocab}) — the lib ABI may be incompatible.");
             }
 
             Console.Error.WriteLine($"[jllama] vocab n_tokens={nVocab}");
@@ -81,7 +81,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
             if (ctxPtr == IntPtr.Zero)
             {
                 LlamaModelFree(modelPtr);
-                throw new InvalidOperationException("llama_new_context_with_model başarısız oldu (yetersiz bellek olabilir).");
+                throw new InvalidOperationException("llama_new_context_with_model failed (possibly insufficient memory).");
             }
 
             var nCtx = LlamaNCtx(ctxPtr);
@@ -89,10 +89,10 @@ public sealed class LlamaDotNetModel : ILanguageModel
             {
                 LlamaFree(ctxPtr);
                 LlamaModelFree(modelPtr);
-                throw new InvalidOperationException($"n_ctx tutarsız ({nCtx} beklenen {cparams.NCtx}) — lib ABI'si uyumsuz.");
+                throw new InvalidOperationException($"n_ctx inconsistent ({nCtx}, expected {cparams.NCtx}) — the lib ABI is incompatible.");
             }
 
-            Console.Error.WriteLine($"[jllama] context hazır: n_ctx={nCtx}, threads={cparams.NThreads}");
+            Console.Error.WriteLine($"[jllama] context ready: n_ctx={nCtx}, threads={cparams.NThreads}");
 
             lock (_gate)
             {
@@ -115,23 +115,23 @@ public sealed class LlamaDotNetModel : ILanguageModel
         var modelId = _spec?.Id;
         if (modelId is null)
         {
-            throw new InvalidOperationException("Model yüklenmemiş.");
+            throw new InvalidOperationException("Model is not loaded.");
         }
 
         var prompt = ChatTemplate.Apply(modelId, messages);
         if (prompt.Length == 0)
         {
-            throw new InvalidOperationException("Prompt boş üretildi.");
+            throw new InvalidOperationException("The prompt was generated empty.");
         }
 
-        Console.Error.WriteLine($"[jllama] tamamlama: promptUzunluk={prompt.Length}, mesaj={messages.Count}");
+        Console.Error.WriteLine($"[jllama] completion: promptLength={prompt.Length}, messages={messages.Count}");
         var promptTokens = Tokenize(prompt, addSpecial: false);
         if (promptTokens.Length == 0)
         {
-            throw new InvalidOperationException("Prompt boş token üretti.");
+            throw new InvalidOperationException("The prompt produced empty tokens.");
         }
 
-        Console.Error.WriteLine($"[jllama] tamamlama başladı: prompt={promptTokens.Length} token, eos={LlamaVocabEos(_vocab)}, maxTokens={opts.MaxTokens}");
+        Console.Error.WriteLine($"[jllama] completion started: prompt={promptTokens.Length} tokens, eos={LlamaVocabEos(_vocab)}, maxTokens={opts.MaxTokens}");
         var eosToken = LlamaVocabEos(_vocab);
 
         var sampler = CreateSampler(opts.Temperature);
@@ -141,12 +141,12 @@ public sealed class LlamaDotNetModel : ILanguageModel
             int decoded = DecodeTokens(promptTokens);
             if (decoded < 0)
             {
-                throw new InvalidOperationException($"llama_decode prompt hatası ({decoded}).");
+                throw new InvalidOperationException($"llama_decode prompt error ({decoded}).");
             }
 
             if (LlamaGetLogitsIth(_ctx, -1) == IntPtr.Zero)
             {
-                throw new InvalidOperationException("llama_decode çıktı üretmedi (logits NULL).");
+                throw new InvalidOperationException("llama_decode produced no output (logits NULL).");
             }
 
             var single = new int[1];
@@ -156,13 +156,13 @@ public sealed class LlamaDotNetModel : ILanguageModel
 
                 if (LlamaGetLogitsIth(_ctx, -1) == IntPtr.Zero)
                 {
-                    throw new InvalidOperationException($"decode[{i}] çıktı üretmedi (logits NULL).");
+                    throw new InvalidOperationException($"decode[{i}] produced no output (logits NULL).");
                 }
 
                 var token = LlamaSamplerSample(sampler, _ctx, -1);
                 if (token == -1 || (eosToken >= 0 && token == eosToken))
                 {
-                    Console.Error.WriteLine($"[jllama] durduruldu (token={token}, i={i})");
+                    Console.Error.WriteLine($"[jllama] stopped (token={token}, i={i})");
                     break;
                 }
 
@@ -178,7 +178,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
                 }
             }
 
-            Console.Error.WriteLine($"[jllama] tamamlama bitti: {sb.Length} karakter, {sb.ToString().Length} uzunluk");
+            Console.Error.WriteLine($"[jllama] completion finished: {sb.Length} chars, {sb.ToString().Length} length");
             return sb.ToString().Trim();
         }
         finally
@@ -192,7 +192,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
         IReadOnlyList<ToolDefinition> tools,
         CancellationToken ct = default)
     {
-        // Faz 2: same heuristic JSON tool-call parsing as the LLamaSharp path.
+        // Phase 2: same heuristic JSON tool-call parsing as the LLamaSharp path.
         var toolsJson = JsonSerializer.Serialize(tools.Select(t => new
         {
             t.Name,
@@ -297,14 +297,14 @@ public sealed class LlamaDotNetModel : ILanguageModel
 
     private IntPtr CreateSampler(float temperature)
     {
-        // b10682 zinciri: seçimi sonunda llama_sampler_init_dist yapar — onsuz
-        // cur_p.selected -1 kalır ve llama_sampler_sample GGML_ASSERT ile çöker.
+        // b10682 chain: llama_sampler_init_dist performs the selection at the end — without
+        // it cur_p.selected stays -1 and llama_sampler_sample crashes with a GGML_ASSERT.
         var chain = LlamaSamplerChainInit(LlamaSamplerChainDefaultParams());
         LlamaSamplerChainAdd(chain, LlamaSamplerInitTopK(40));
         LlamaSamplerChainAdd(chain, LlamaSamplerInitTopP(0.9f, 1));
         LlamaSamplerChainAdd(chain, LlamaSamplerInitMinP(0.05f, 1));
         LlamaSamplerChainAdd(chain, LlamaSamplerInitTemp(temperature));
-        // Rastgele tohum: LLAMA_DEFAULT_SEED (0xFFFFFFFF) ile aynı.
+        // Random seed: the same as LLAMA_DEFAULT_SEED (0xFFFFFFFF).
         LlamaSamplerChainAdd(chain, LlamaSamplerInitDist(uint.MaxValue));
         return chain;
     }
@@ -315,15 +315,15 @@ public sealed class LlamaDotNetModel : ILanguageModel
         var n = LlamaTokenize(_vocab, bytes, bytes.Length, null, 0, addSpecial, parseSpecial: true);
         if (n == 0)
         {
-            Console.Error.WriteLine($"[jllama] tokenize: boş metin ({bytes.Length} bayt)");
+            Console.Error.WriteLine($"[jllama] tokenize: empty text ({bytes.Length} bytes)");
             return Array.Empty<int>();
         }
 
         if (n < 0)
         {
-            // b10682 llama_vocab::tokenize: yetersiz tampon halinde -(ihtiyaç duyulan
-            // token sayısı) döndürür (llama-vocab.cpp:4136); NULL/0 ile "yoklama" artık
-            // pozitif sayı değil, negatif gerekli-sayı üretir.
+            // b10682 llama_vocab::tokenize: with an insufficient buffer it returns the
+            // negative of the required token count (llama-vocab.cpp:4136); "probing" with
+            // NULL/0 no longer yields a positive count but the negative required count.
             n = -n;
         }
 
@@ -331,7 +331,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
         var written = LlamaTokenize(_vocab, bytes, bytes.Length, tokens, n, addSpecial, parseSpecial: true);
         if (written < 0)
         {
-            Console.Error.WriteLine($"[jllama] tokenize: ikinci çağrı da yetersiz (ihtiyaç={-written}, ayrılan={n})");
+            Console.Error.WriteLine($"[jllama] tokenize: second call also insufficient (needed={-written}, allocated={n})");
             return Array.Empty<int>();
         }
 
@@ -357,7 +357,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
 
         if (n < 0)
         {
-            // b10682 token_to_piece: yetersiz tampon → -(gerekli bayt) döndürür.
+            // b10682 token_to_piece: insufficient buffer → returns -(required bytes).
             n = -n;
         }
 
@@ -389,9 +389,9 @@ public sealed class LlamaDotNetModel : ILanguageModel
                 Marshal.WriteByte(logitsBuf, i, 0);
             }
 
-            // b10682 llama_batch_get_one, logits'i NULL döndürür → llama_decode hiç
-            // çıktı üretmez ve llama_sampler_sample GGML_ASSERT ile çöker. Kendi
-            // batch'imizi kurup son tokenı çıktıya işaretliyoruz.
+            // b10682 llama_batch_get_one returns NULL logits → llama_decode produces no
+            // output and llama_sampler_sample crashes with a GGML_ASSERT. We build our
+            // own batch and mark the last token as the output.
             Marshal.WriteByte(logitsBuf, n - 1, 1);
 
             var batch = new LlamaBatch
@@ -430,7 +430,7 @@ public sealed class LlamaDotNetModel : ILanguageModel
         if (!ok)
         {
             throw new InvalidOperationException(
-                $"llama_model_default_params anormal döndü (n_gpu_layers={p.NGpuLayers}, split_mode={p.SplitMode}, main_gpu={p.MainGpu}, vocab_only={p.VocabOnly}) — lib ABI'si uyumsuz olabilir.");
+                $"llama_model_default_params returned abnormal values (n_gpu_layers={p.NGpuLayers}, split_mode={p.SplitMode}, main_gpu={p.MainGpu}, vocab_only={p.VocabOnly}) — the lib ABI may be incompatible.");
         }
     }
 

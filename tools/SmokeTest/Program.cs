@@ -9,11 +9,11 @@ var llmManager = new ModelManager(Path.Combine(root, "models", "llm"));
 
 // ---- Vosk: STT + wake word ----------------------------------------------
 var modelUrl = "https://alphacephei.com/vosk/models/vosk-model-small-tr-0.3.zip";
-Console.WriteLine("[1/4] Vosk model kontrol / indirme…");
+Console.WriteLine("[1/4] Vosk model check / download…");
 var modelDir = await voiceManager.DownloadAndExtractZipAsync(modelUrl, Path.Combine(root, "vosk"));
 Console.WriteLine($"      Model: {modelDir}");
 
-Console.WriteLine("[2/4] VoskSpeechToText yükleniyor…");
+Console.WriteLine("[2/4] VoskSpeechToText loading…");
 var stt = new VoskSpeechToText();
 await stt.LoadModelAsync(modelDir);
 var silence = new byte[AudioFormat.SampleRate * 2];
@@ -26,19 +26,19 @@ await spotter.LoadAsync(modelDir);
 spotter.SetKeywords(new[] { "asistan" });
 spotter.Feed(silence);
 spotter.Reset();
-Console.WriteLine("      OK — STT + wake-word hazır.");
+Console.WriteLine("      OK — STT + wake-word ready.");
 
 // ---- LLM: real llama.cpp inference --------------------------------------
 var info = ModelCatalog.Qwen25_0_5B;
 var ggufPath = llmManager.GetFilePath(info.Id + ".gguf");
-Console.WriteLine($"[4/4] GGUF {(llmManager.IsDownloaded(ggufPath) ? "mevcut" : "indiriliyor")}: {info.Id}");
+Console.WriteLine($"[4/4] GGUF {(llmManager.IsDownloaded(ggufPath) ? "available" : "downloading")}: {info.Id}");
 await llmManager.DownloadAsync(info.DownloadUrl, ggufPath);
-Console.WriteLine($"      GGUF hazır: {new FileInfo(ggufPath).Length / 1_000_000.0:0} MB");
+Console.WriteLine($"      GGUF ready: {new FileInfo(ggufPath).Length / 1_000_000.0:0} MB");
 
-Console.WriteLine("      LLM yükleniyor + çıkarım…");
+Console.WriteLine("      LLM loading + inference…");
 await using var model = new LLamaSharpModel();
 var report = await model.LoadAsync(new ModelSpec(info.Id, ggufPath, ContextTokens: 1024, Threads: Environment.ProcessorCount));
-Console.WriteLine($"      Yüklendi: {report.Bytes / 1_000_000.0:0} MB");
+Console.WriteLine($"      Loaded: {report.Bytes / 1_000_000.0:0} MB");
 
 var sb = new System.Text.StringBuilder();
 model.TokenProduced += (_, t) => sb.Append(t);
@@ -49,11 +49,11 @@ var answer = await model.CompleteAsync(
         new ChatMessage(ChatRole.User, "Bir cümleyle kendini tanıt."),
     },
     new GenerationOptions(Temperature: 0.7f, MaxTokens: 96));
-Console.WriteLine($"      YANIT: {answer}");
-Console.WriteLine($"      Toplam {sb.Length} karakter token olarak aktı.");
+Console.WriteLine($"      ANSWER: {answer}");
+Console.WriteLine($"      Total {sb.Length} characters streamed as tokens.");
 
-// ---- Piper TTS: piper.exe + TR ses modeli + inference --------------------
-Console.WriteLine("[5/5] Piper TTS hazırlanıyor…");
+// ---- Piper TTS: piper.exe + TR voice model + inference --------------------
+Console.WriteLine("[5/5] Preparing Piper TTS…");
 var piperRuntime = Path.Combine(root, "piper");
 var ttsRoot = Path.Combine(root, "models", "tts");
 Directory.CreateDirectory(piperRuntime);
@@ -62,19 +62,19 @@ Directory.CreateDirectory(ttsRoot);
 var piperExe = Path.Combine(piperRuntime, "piper", "piper.exe");
 if (File.Exists(piperExe) is false)
 {
-    Console.WriteLine("      piper çalıştırıcısı indiriliyor…");
+    Console.WriteLine("      piper executable downloading…");
     var bundle = await PiperSharp.PiperDownloader.DownloadPiper();
     await Task.Run(() => bundle.ExtractPiper(piperRuntime));
 }
-Console.WriteLine($"      Çalıştırıcı: {piperExe} ({(File.Exists(piperExe) ? new FileInfo(piperExe).Length / 1_000_000.0 : 0):0.00} MB)");
+Console.WriteLine($"      Executable: {piperExe} ({(File.Exists(piperExe) ? new FileInfo(piperExe).Length / 1_000_000.0 : 0):0.00} MB)");
 
 var voiceKey = VoiceCatalog.TurkishDfki.Id;
 var voiceDir = Path.Combine(ttsRoot, voiceKey);
 if (File.Exists(Path.Combine(voiceDir, "model.json")) is false)
 {
-    Console.WriteLine($"      Ses ({voiceKey}) indiriliyor…");
+    Console.WriteLine($"      Voice ({voiceKey}) downloading…");
     var voiceInfo = await PiperSharp.PiperDownloader.GetModelByKey(voiceKey);
-    if (voiceInfo is null) throw new InvalidOperationException("Ses modeli bulunamadı!");
+    if (voiceInfo is null) throw new InvalidOperationException("Voice model not found!");
     await voiceInfo.DownloadModel(ttsRoot);
 }
 var voiceModel = await PiperSharp.Models.VoiceModel.LoadModel(voiceDir);
@@ -91,7 +91,7 @@ if (onnxJsonName is not null)
     }
 }
 
-Console.WriteLine("      Seslendirme testi (Türkçe)…");
+Console.WriteLine("      Speech synthesis test (Turkish)…");
 var tts = new PiperSharp.PiperProvider(new PiperSharp.Models.PiperConfiguration
 {
     ExecutableLocation = piperExe,
@@ -99,6 +99,6 @@ var tts = new PiperSharp.PiperProvider(new PiperSharp.Models.PiperConfiguration
     Model = voiceModel,
 });
 var pcm = await tts.InferAsync("Merhaba, ben Ataman. Bugün size nasıl yardımcı olabilirim?", PiperSharp.Models.AudioOutputType.Raw);
-Console.WriteLine($"      PCM: {pcm.Length} bayt, {sampleRate} Hz, {(pcm.Length / 2 / (double)sampleRate):0.0} sn");
+Console.WriteLine($"      PCM: {pcm.Length} bytes, {sampleRate} Hz, {(pcm.Length / 2 / (double)sampleRate):0.0} s");
 
-Console.WriteLine("SONUÇ: OK — Vosk (STT+wake), llama.cpp/c# ve Piper TTS uçtan uca çalışıyor.");
+Console.WriteLine("RESULT: OK — Vosk (STT+wake), llama.cpp/c# and Piper TTS work end-to-end.");

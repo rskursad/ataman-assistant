@@ -121,7 +121,7 @@ public sealed class ModelManager
 
         if (inner is null)
         {
-            throw new InvalidOperationException($"Zip '{zipPath}' içinde model klasörü bulunamadı.");
+            throw new InvalidOperationException($"No model folder found inside zip '{zipPath}'.");
         }
 
         return inner.FullName;

@@ -8,7 +8,7 @@ using PiperSharp.Models;
 namespace AtamanAssistant.Desktop.Voice;
 
 /// <summary>
-/// Faz 3: offline Piper TTS on Desktop. Downloads the piper1 (rhasspy/piper)
+/// Phase 3: offline Piper TTS on Desktop. Downloads the piper1 (rhasspy/piper)
 /// standalone executable and the selected voice (.onnx + config) once into the
 /// app data folder, then synthesizes responses and streams the raw PCM into the
 /// shared <see cref="ISoundPlayer"/> (NAudio).
@@ -145,7 +145,7 @@ public sealed class PiperTts : ITextToSpeech
         if (model is null)
         {
             var info = await PiperDownloader.GetModelByKey(key).ConfigureAwait(false)
-                ?? throw new InvalidOperationException($"Ses modeli bulunamadı: {key}");
+                ?? throw new InvalidOperationException($"Voice model not found: {key}");
             await info.DownloadModel(AppPaths.TtsVoices).ConfigureAwait(false);
             model = await VoiceModel.LoadModel(modelDir).ConfigureAwait(false);
         }

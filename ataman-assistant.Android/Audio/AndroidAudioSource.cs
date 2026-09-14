@@ -36,14 +36,14 @@ public sealed class AndroidAudioSource : IAudioCapture
             var context = global::Android.App.Application.Context;
             if (context.CheckSelfPermission(global::Android.Manifest.Permission.RecordAudio) != global::Android.Content.PM.Permission.Granted)
             {
-                return Task.FromException(new UnauthorizedAccessException("Mikrofon izni verilmedi."));
+                return Task.FromException(new UnauthorizedAccessException("Microphone permission not granted."));
             }
 
             var minBuf = AudioRecord.GetMinBufferSize(
                 SampleRate, ChannelIn.Mono, Encoding.Pcm16bit);
             if (minBuf <= 0)
             {
-                return Task.FromException(new InvalidOperationException("AudioRecord minimum buffer boyutu alınamadı."));
+                return Task.FromException(new InvalidOperationException("Could not determine the AudioRecord minimum buffer size."));
             }
 
             var record = new AudioRecord(
@@ -55,7 +55,7 @@ public sealed class AndroidAudioSource : IAudioCapture
             if (record.State != State.Initialized)
             {
                 SafeRelease(record);
-                return Task.FromException(new InvalidOperationException("AudioRecord başlatılamadı."));
+                return Task.FromException(new InvalidOperationException("AudioRecord could not be initialized."));
             }
 
             try
@@ -65,7 +65,7 @@ public sealed class AndroidAudioSource : IAudioCapture
             catch (Exception ex)
             {
                 SafeRelease(record);
-                return Task.FromException(new InvalidOperationException("Mikrofon açılamadı.", ex));
+                return Task.FromException(new InvalidOperationException("Microphone could not be opened.", ex));
             }
 
             _audioRecord = record;
