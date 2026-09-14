@@ -10,7 +10,7 @@ namespace Ataman.Core.Model;
 /// llama.cpp executor via LLamaSharp. Applies the model chat template by hand
 /// (Qwen2.x / Llama-3.x) so generation is stable across LLamaSharp versions,
 /// and streams decoded tokens via <see cref="TokenProduced"/>. Tool calls are
-/// parsed heuristically from the raw text for Faz 2; strict JSON grammar
+/// parsed heuristically from the raw text for Phase 2; strict JSON grammar
 /// constraints arrive with the tool loop.
 /// </summary>
 public sealed class LLamaSharpModel : ILanguageModel
@@ -69,7 +69,7 @@ public sealed class LLamaSharpModel : ILanguageModel
 
         if (executor is null || spec is null)
         {
-            throw new InvalidOperationException("Model yüklenmemiş.");
+            throw new InvalidOperationException("Model is not loaded.");
         }
 
         var prompt = ChatTemplate.Apply(spec.Id, messages);
@@ -103,7 +103,7 @@ public sealed class LLamaSharpModel : ILanguageModel
         IReadOnlyList<ToolDefinition> tools,
         CancellationToken ct = default)
     {
-        // Faz 2: heuristic JSON tool-call parsing. A strict JSON-schema
+        // Phase 2: heuristic JSON tool-call parsing. A strict JSON-schema
         // grammar replaces this in the tool-loop milestone so small models
         // emit well-formed calls.
         var toolsJson = JsonSerializer.Serialize(tools.Select(t => new

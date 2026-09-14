@@ -12,7 +12,7 @@ namespace AtamanAssistant.ViewModels;
 
 /// <summary>
 /// Shell view-model backing the main window. Hosts the conversation surface
-/// and the settings page. Faz 2 wires text + voice input through the on-device
+/// and the settings page. Phase 2 wires text + voice input through the on-device
 /// LLM (llama.cpp via LLamaSharp).
 /// </summary>
 public partial class MainViewModel : ViewModelBase
@@ -102,7 +102,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Faz 2 core: streams the microphone through Vosk; every finalized
+    /// Phase 2 core: streams the microphone through Vosk; every finalized
     /// utterance is treated as a user turn for the LLM.
     /// </summary>
     [RelayCommand]
@@ -292,7 +292,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[ataman] LLM hatası: {ex}");
+            Console.Error.WriteLine($"[ataman] LLM error: {ex}");
             StatusText = $"Hata: {ex.Message}";
             Transcript.Add($"Ataman: [hata] {ex.Message}");
         }
@@ -367,7 +367,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[ataman] model yüklenemedi: {ex}");
+            Console.Error.WriteLine($"[ataman] model failed to load: {ex}");
             StatusText = $"Model yüklenemedi: {ex.Message}";
             return false;
         }

@@ -44,7 +44,7 @@ public sealed class AndroidTextToSpeech : ITextToSpeech
             }
             else
             {
-                _initTcs.TrySetException(new InvalidOperationException("TTS motoru başlatılamadı."));
+                _initTcs.TrySetException(new InvalidOperationException("The TTS engine could not be started."));
             }
         }));
     }
@@ -100,7 +100,7 @@ public sealed class AndroidTextToSpeech : ITextToSpeech
                 }
             }
 
-            throw new InvalidOperationException("TTS konuşma kuyruğa alınamadı.");
+            throw new InvalidOperationException("The TTS utterance could not be queued.");
         }
 
         try
