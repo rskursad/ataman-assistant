@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AtamanAssistant.ViewModels"
+             xmlns:sys="using:System"
+             mc:Ignorable="d" d:DesignWidth="880" d:DesignHeight="560"
+             x:Class="AtamanAssistant.Views.MainView"
+             x:DataType="vm:MainViewModel">
+
+  <Grid RowDefinitions="Auto,*,Auto,Auto">
+
+    <Grid ColumnDefinitions="*,Auto" Margin="16,14,16,6">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Text="Ataman Assistant" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+        <Border Background="#22000000" CornerRadius="12" Padding="10,2" VerticalAlignment="Center">
+          <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.8" />
+        </Border>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{Binding IsThinking, StringFormat='{}Model çalışıyor…'}"
+                   FontSize="12" Opacity="0.7" VerticalAlignment="Center"
+                   IsVisible="{Binding IsThinking}" />
+        <Button Content="Yeni sohbet" Command="{Binding ClearChatCommand}" />
+      </StackPanel>
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" Margin="12,0">
+      <ItemsControl ItemsSource="{Binding Transcript}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="sys:String">
+            <TextBlock Text="{Binding}" Margin="0,5" TextWrapping="Wrap" FontSize="14" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="12,10,12,6">
+      <Button Grid.Column="0"
+              Content="{Binding MicTestButtonText}"
+              Command="{Binding ToggleMicTestCommand}"
+              Margin="0,0,8,0" />
+      <TextBox Grid.Column="1"
+               Text="{Binding InputText, Mode=TwoWay}"
+               PlaceholderText="Komutunuzu yazın…"
+               FontSize="14" />
+      <Button Grid.Column="2"
+              Content="Gönder"
+              Command="{Binding SendCommand}"
+              Margin="8,0,0,0" />
+    </Grid>
+
+    <TextBlock Grid.Row="3"
+               Text="Faz 1: mikrofon + Vosk (dikte). Faz 2: llama.cpp (model). Faz 3: Piper (ses)."
+               Margin="14,2,14,8"
+               Opacity="0.5"
+               FontSize="11" />
+
+  </Grid>
+</UserControl>

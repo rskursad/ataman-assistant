@@ -1,0 +1,95 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AtamanAssistant.ViewModels"
+             xmlns:core="using:Ataman.Core.Settings"
+             xmlns:voice="using:Ataman.Core.Voice"
+             mc:Ignorable="d" d:DesignWidth="880" d:DesignHeight="560"
+             x:Class="AtamanAssistant.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24,18" Spacing="10" MaxWidth="680" HorizontalAlignment="Stretch">
+
+      <TextBlock Text="Ayarlar" FontSize="20" FontWeight="Bold" />
+      <TextBlock Text="{Binding StatusText}" Opacity="0.7" FontSize="12" />
+
+      <TextBlock Text="Konuşma dili" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <ComboBox ItemsSource="{Binding Languages}"
+                SelectedItem="{Binding SelectedLanguage}"
+                HorizontalAlignment="Stretch">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="core:LanguageInfo">
+            <TextBlock Text="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <TextBlock Text="Uyandırma sözcüğü (wake-word)" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <TextBox Text="{Binding WakeWord, Mode=TwoWay}" />
+
+      <TextBlock Text="Yanıt sesi (Piper - açık kaynak)" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <ComboBox ItemsSource="{Binding Voices}"
+                SelectedItem="{Binding SelectedVoice}"
+                HorizontalAlignment="Stretch">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="voice:TtsVoice">
+            <TextBlock Text="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <CheckBox Content="Her zaman dinleme (telefonda izin gerekir)" IsChecked="{Binding AlwaysListening}" Margin="0,6,0,0" />
+      <CheckBox Content="Konuşulanı modelden önce İngilizce'ye çevir" IsChecked="{Binding TranslateToEnglish}" />
+      <CheckBox Content="Yanıtları seslendir (Piper)" IsChecked="{Binding SpeakResponses}" />
+
+      <Border Height="1" Background="#22000000" Margin="0,10" />
+
+      <TextBlock Text="Dil modeli (GGUF)" FontWeight="SemiBold" Margin="0,4,0,0" />
+      <ComboBox ItemsSource="{Binding Models}"
+                SelectedItem="{Binding SelectedModel}"
+                HorizontalAlignment="Stretch">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="core:ModelInfo">
+            <TextBlock Text="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <Button Content="Modeli İndir" Command="{Binding DownloadModelCommand}" />
+        <TextBlock Text="{Binding ModelStateText}"
+                   VerticalAlignment="Center"
+                   Opacity="0.7"
+                   FontSize="12" />
+      </StackPanel>
+      <ProgressBar Value="{Binding DownloadProgress}"
+                   Maximum="1"
+                   Minimum="0"
+                   IsVisible="{Binding IsDownloading}"
+                   Height="6" />
+
+      <TextBlock Text="Yanıt ayarları" FontWeight="SemiBold" Margin="0,10,0,0" />
+      <Grid ColumnDefinitions="120,*,Auto,120" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Maksimum yanıt" VerticalAlignment="Center" />
+        <Slider Grid.Row="0" Grid.Column="1" Minimum="32" Maximum="1024"
+                Value="{Binding MaxResponseTokens, Mode=TwoWay}" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding MaxResponseTokens}" VerticalAlignment="Center" Opacity="0.7" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Sıcaklık" VerticalAlignment="Center" />
+        <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1.5"
+                Value="{Binding Temperature, Mode=TwoWay}" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding Temperature}" VerticalAlignment="Center" Opacity="0.7" />
+      </Grid>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,14,0,0">
+        <Button Content="Kaydet" Command="{Binding SaveCommand}" MinWidth="120" />
+      </StackPanel>
+
+      <TextBlock Text="Altyapı: llama.cpp (GGUF, Qwen2.5-1.5B) · Vosk (STT) · Piper (TTS) · hepsi cihaz içi."
+                 Margin="0,18,0,0" Opacity="0.45" FontSize="11" />
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

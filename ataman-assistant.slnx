@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="ataman-assistant.Android/AtamanAssistant.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="ataman-assistant.Browser/AtamanAssistant.Browser.csproj" />
+  <Project Path="ataman-assistant.Desktop/AtamanAssistant.Desktop.csproj" />
+  <Project Path="ataman-assistant.iOS/AtamanAssistant.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="ataman-assistant/AtamanAssistant.csproj" />
+  <Project Path="Ataman.Core/Ataman.Core.csproj" />
+</Solution>
