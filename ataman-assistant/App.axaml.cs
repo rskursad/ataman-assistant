@@ -53,12 +53,7 @@ public partial class App : Application
     {
         AppPaths.EnsureCreated();
         var settingsStore = new JsonSettingsStore(AppPaths.Data);
-        return new MainViewModel(
-            settingsStore,
-            languageModel: AppServices.LanguageModelFactory?.Invoke(),
-            audioCapture: AppServices.AudioCaptureFactory?.Invoke(),
-            speechToText: AppServices.SpeechToTextFactory?.Invoke(),
-            keywordSpotter: AppServices.KeywordSpotterFactory?.Invoke(),
-            textToSpeech: AppServices.TextToSpeechFactory?.Invoke());
+        var engine = AppServices.CreateDefaultEngine(settingsStore);
+        return new MainViewModel(settingsStore, engine);
     }
 }

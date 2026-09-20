@@ -35,7 +35,7 @@ Fully offline voice assistant: wake-word trigger + on-device LLM (llama.cpp/GGUF
   `AndroidTextToSpeech` plays audio itself; `AudioFrameProduced` is never raised on Android. Voice mapping:
   `tr` → tr-TR, `en` → en-US (SetLanguage fallback: device default).
 - Default wake word: `asistan` (the slim Vosk TR dictionary has no `ataman`).
-- Goal: the first release is voice chat only; the `ITranslator` translation layer (Phase 4) is pending.
+- Translation layer: `LlmTranslator` implements `ITranslator` (Phase 4 completed) for zero-shot local translation to English.
 - Desktop TTS: **piper1** (rhaspy/piper standalone exe) + `tr_TR-dfki-medium`. Voices are selectable **only** from
   the rhaspy/piper-voices `main` branch `voices.json` — `fahrettin`/`amy` were removed. Available:
   `tr_TR-dfki-medium`, `en_US-lessac-medium`, `en_US-lessac-low`, `en_US-ryan-high`.

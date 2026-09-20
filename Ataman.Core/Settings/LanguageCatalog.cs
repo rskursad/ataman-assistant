@@ -13,7 +13,7 @@ public sealed record LanguageInfo(
 public static class LanguageCatalog
 {
     public static LanguageInfo Turkish { get; } =
-        new("tr", "Türkçe", "vosk-model-small-tr-0.3", "vosk-model-small-tr-0.3", "tr_TR-fahrettin-medium", "asistan");
+        new("tr", "Türkçe", "vosk-model-small-tr-0.3", "vosk-model-small-tr-0.3", "tr_TR-dfki-medium", "asistan");
 
     public static LanguageInfo English { get; } =
         new("en", "English", "vosk-model-en-us-0.22", "vosk-model-small-en-us-0.15", "en_US-lessac-medium", "ataman");

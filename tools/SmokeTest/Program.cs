@@ -20,13 +20,13 @@ var silence = new byte[AudioFormat.SampleRate * 2];
 stt.Feed(silence);
 stt.Reset();
 
-Console.WriteLine("[3/4] VoskKeywordSpotter (grammar)…");
+Console.WriteLine("[3/4] VoskKeywordSpotter (custom grammar + phonetic expansion + silence gating)…");
 var spotter = new VoskKeywordSpotter();
 await spotter.LoadAsync(modelDir);
-spotter.SetKeywords(new[] { "asistan" });
+spotter.SetKeywords(new[] { "ataman", "asistan" });
 spotter.Feed(silence);
 spotter.Reset();
-Console.WriteLine("      OK — STT + wake-word ready.");
+Console.WriteLine("      OK — Custom wake-words with phonetic expansion (ataman -> ata man, atam an) ready.");
 
 // ---- LLM: real llama.cpp inference --------------------------------------
 var info = ModelCatalog.Qwen25_0_5B;
@@ -52,8 +52,21 @@ var answer = await model.CompleteAsync(
 Console.WriteLine($"      ANSWER: {answer}");
 Console.WriteLine($"      Total {sb.Length} characters streamed as tokens.");
 
+// ---- Tone generator check -----------------------------------------------
+Console.WriteLine("[5/7] ToneGenerator wake chime test…");
+var chime = ToneGenerator.CreateWakeChime();
+Console.WriteLine($"      Chime generated: {chime.Length} bytes.");
+
+// ---- Translator check ---------------------------------------------------
+Console.WriteLine("[6/7] LlmTranslator (TR -> EN -> TR) test…");
+var translator = new Ataman.Core.Translate.LlmTranslator(model);
+var translated = await translator.TranslateAsync("Türkiye'nin başkenti neresidir?", "Turkish", "English");
+Console.WriteLine($"      TRANSLATION TO EN: \"{translated}\"");
+var backToTr = await translator.TranslateAsync("The capital of Turkey is Ankara.", "English", "Turkish");
+Console.WriteLine($"      TRANSLATION BACK TO TR: \"{backToTr}\"");
+
 // ---- Piper TTS: piper.exe + TR voice model + inference --------------------
-Console.WriteLine("[5/5] Preparing Piper TTS…");
+Console.WriteLine("[7/7] Preparing Piper TTS…");
 var piperRuntime = Path.Combine(root, "piper");
 var ttsRoot = Path.Combine(root, "models", "tts");
 Directory.CreateDirectory(piperRuntime);

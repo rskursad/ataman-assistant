@@ -3,38 +3,58 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AtamanAssistant.ViewModels"
-             xmlns:sys="using:System"
              mc:Ignorable="d" d:DesignWidth="880" d:DesignHeight="560"
              x:Class="AtamanAssistant.Views.MainView"
              x:DataType="vm:MainViewModel">
 
   <Grid RowDefinitions="Auto,*,Auto,Auto">
 
+    <!-- Top Bar -->
     <Grid ColumnDefinitions="*,Auto" Margin="16,14,16,6">
       <StackPanel Orientation="Horizontal" Spacing="10">
         <TextBlock Text="Ataman Assistant" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
-        <Border Background="#22000000" CornerRadius="12" Padding="10,2" VerticalAlignment="Center">
-          <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.8" />
+        <Border Background="#18888888" CornerRadius="12" Padding="12,4" VerticalAlignment="Center">
+          <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.85" />
         </Border>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="{Binding IsThinking, StringFormat='{}Model çalışıyor…'}"
+        <TextBlock Text="Model çalışıyor…"
                    FontSize="12" Opacity="0.7" VerticalAlignment="Center"
                    IsVisible="{Binding IsThinking}" />
         <Button Content="Yeni sohbet" Command="{Binding ClearChatCommand}" />
       </StackPanel>
     </Grid>
 
-    <ScrollViewer Grid.Row="1" Margin="12,0">
+    <!-- Conversation Surface -->
+    <ScrollViewer Grid.Row="1" x:Name="ChatScrollViewer" Margin="12,4">
       <ItemsControl ItemsSource="{Binding Transcript}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="sys:String">
-            <TextBlock Text="{Binding}" Margin="0,5" TextWrapping="Wrap" FontSize="14" />
+          <DataTemplate x:DataType="vm:TranscriptItem">
+            <Border Margin="0,4" Padding="12,10" CornerRadius="8"
+                    Background="{Binding IsUser, Converter={x:Null}}"
+                    HorizontalAlignment="Stretch">
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <TextBlock Text="{Binding Header}" FontWeight="Bold" FontSize="13" Opacity="0.8" />
+                  <TextBlock Grid.Column="2" Text="{Binding FormattedTime}" FontSize="11" Opacity="0.4" />
+                </Grid>
+
+                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" LineHeight="20" />
+
+                <!-- English translation badge if prompt was translated -->
+                <Border Background="#120099FF" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left"
+                        IsVisible="{Binding HasTranslation}">
+                  <TextBlock Text="{Binding TranslatedText, StringFormat='{}EN: {0}'}"
+                             FontSize="11" FontStyle="Italic" Opacity="0.65" />
+                </Border>
+              </StackPanel>
+            </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </ScrollViewer>
 
+    <!-- Controls & Input -->
     <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="12,10,12,6">
       <Button Grid.Column="0"
               Content="{Binding MicTestButtonText}"
@@ -42,7 +62,7 @@
               Margin="0,0,8,0" />
       <TextBox Grid.Column="1"
                Text="{Binding InputText, Mode=TwoWay}"
-               PlaceholderText="Komutunuzu yazın…"
+               PlaceholderText="Komutunuzu yazın veya mikrofondan konuşun…"
                FontSize="14" />
       <Button Grid.Column="2"
               Content="Gönder"
@@ -50,8 +70,9 @@
               Margin="8,0,0,0" />
     </Grid>
 
+    <!-- Footer Status -->
     <TextBlock Grid.Row="3"
-               Text="Faz 1: mikrofon + Vosk (dikte). Faz 2: llama.cpp (model). Faz 3: Piper (ses)."
+               Text="Yerel Çeviri (Çok dilli -> EN) · LLM (llama.cpp) · Vosk (STT + Uyandırma) · Piper (TTS) · Tamamen Çevrimdışı."
                Margin="14,2,14,8"
                Opacity="0.5"
                FontSize="11" />

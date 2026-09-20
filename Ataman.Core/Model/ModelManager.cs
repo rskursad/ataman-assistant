@@ -103,18 +103,39 @@ public sealed class ModelManager
 
         System.IO.Directory.CreateDirectory(extractToDirectory);
 
-        // The zip is stored inside extractToDirectory, so the directory existing
-        // does NOT prove it was already extracted. Skip extraction only when a real
-        // model folder (recognised by its am/conf markers) is already present.
-        if (!System.IO.Directory.EnumerateDirectories(extractToDirectory).Any(IsModelDirectory))
+        // Determine the root folder name inside the zip archive
+        string? rootFolderName = null;
+        try
+        {
+            using var archive = System.IO.Compression.ZipFile.OpenRead(zipPath);
+            rootFolderName = archive.Entries
+                .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e.FullName) && e.FullName.Contains('/'))
+                ?.FullName.Split('/')[0];
+        }
+        catch
+        {
+            // Fallback to url filename without .zip
+        }
+
+        rootFolderName ??= Path.GetFileNameWithoutExtension(new Uri(zipUrl).LocalPath);
+        var targetModelDir = Path.Combine(extractToDirectory, rootFolderName);
+
+        // Extract if this specific model folder is not already extracted
+        if (!Directory.Exists(targetModelDir) || !IsModelDirectory(targetModelDir))
         {
             await Task.Run(
                 () => System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, extractToDirectory, overwriteFiles: true),
                 ct).ConfigureAwait(false);
         }
 
+        if (Directory.Exists(targetModelDir) && IsModelDirectory(targetModelDir))
+        {
+            return targetModelDir;
+        }
+
         var inner = System.IO.Directory
             .EnumerateDirectories(extractToDirectory)
+            .Where(IsModelDirectory)
             .Select(d => new DirectoryInfo(d))
             .OrderByDescending(d => d.Name.Length)
             .FirstOrDefault();
@@ -128,10 +149,10 @@ public sealed class ModelManager
     }
 
     /// <summary>
-/// Recognises an extracted model folder. Vosk ships both layouts: classic
-/// (am/final.mdl, conf/model.conf) and the newer flat one (final.mdl at root).
-/// </summary>
-    private static bool IsModelDirectory(string directory) =>
+    /// Recognises an extracted model folder. Vosk ships both layouts: classic
+    /// (am/final.mdl, conf/model.conf) and the newer flat one (final.mdl at root).
+    /// </summary>
+    public static bool IsModelDirectory(string directory) =>
         File.Exists(Path.Combine(directory, "final.mdl"))
         || File.Exists(Path.Combine(directory, "am", "final.mdl"))
         || File.Exists(Path.Combine(directory, "conf", "model.conf"));

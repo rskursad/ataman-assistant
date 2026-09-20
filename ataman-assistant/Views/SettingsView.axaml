@@ -27,7 +27,17 @@
       </ComboBox>
 
       <TextBlock Text="Uyandırma sözcüğü (wake-word)" FontWeight="SemiBold" Margin="0,8,0,0" />
-      <TextBox Text="{Binding WakeWord, Mode=TwoWay}" />
+      <TextBox Text="{Binding WakeWord, Mode=TwoWay}"
+               PlaceholderText="Örn: asistan veya ataman (virgülle birden çok sözcük ekleyebilirsiniz)" />
+      <TextBlock Text="İstediğiniz sözcük veya öbeği yazabilirsiniz. Çoklu kelimeler için virgülle ayırın (örn: asistan, hey asistan)."
+                 FontSize="11" Opacity="0.6" Margin="2,-4,0,2" />
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+        <TextBlock Text="Hızlı Seçim:" FontSize="11" Opacity="0.5" VerticalAlignment="Center" />
+        <Button Content="asistan" FontSize="11" Padding="8,2" Command="{Binding SetWakeWordPresetCommand}" CommandParameter="asistan" />
+        <Button Content="ataman" FontSize="11" Padding="8,2" Command="{Binding SetWakeWordPresetCommand}" CommandParameter="ataman" />
+        <Button Content="hey asistan" FontSize="11" Padding="8,2" Command="{Binding SetWakeWordPresetCommand}" CommandParameter="hey asistan" />
+        <Button Content="bilgisayar" FontSize="11" Padding="8,2" Command="{Binding SetWakeWordPresetCommand}" CommandParameter="bilgisayar" />
+      </StackPanel>
 
       <TextBlock Text="Yanıt sesi (Piper - açık kaynak)" FontWeight="SemiBold" Margin="0,8,0,0" />
       <ComboBox ItemsSource="{Binding Voices}"

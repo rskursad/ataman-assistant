@@ -12,4 +12,10 @@ public interface ITranslator
     TranslationLanguage Target { get; }
 
     Task<string> TranslateAsync(string text, CancellationToken ct = default);
+
+    Task<string> TranslateAsync(
+        string text,
+        string sourceLanguage,
+        string targetLanguage,
+        CancellationToken ct = default) => TranslateAsync(text, ct);
 }

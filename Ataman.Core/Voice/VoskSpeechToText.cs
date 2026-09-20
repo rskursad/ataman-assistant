@@ -13,6 +13,7 @@ public sealed class VoskSpeechToText : ISpeechToText
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     private Vosk.Model? _model;
     private Vosk.VoskRecognizer? _recognizer;
+    private string? _loadedModelPath;
 
     public event EventHandler<string>? PartialResult;
     public event EventHandler<FinalRecognition>? Recognized;
@@ -22,8 +23,21 @@ public sealed class VoskSpeechToText : ISpeechToText
         await _loadLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (_model is not null && string.Equals(_loadedModelPath, modelPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             Vosk.Vosk.SetLogLevel(0);
-            _model ??= new Vosk.Model(modelPath);
+            lock (_gate)
+            {
+                _recognizer?.Dispose();
+                _recognizer = null;
+                _model?.Dispose();
+                _model = new Vosk.Model(modelPath);
+                _loadedModelPath = modelPath;
+            }
+
             Reset();
         }
         finally

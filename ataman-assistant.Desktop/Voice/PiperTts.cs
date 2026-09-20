@@ -86,7 +86,7 @@ public sealed class PiperTts : ITextToSpeech
                 return;
             }
 
-            _soundPlayer.Play(pcm, _sampleRate);
+            await _soundPlayer.PlayAsync(pcm, _sampleRate, ct).ConfigureAwait(false);
         }
         finally
         {

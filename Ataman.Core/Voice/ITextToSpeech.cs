@@ -27,4 +27,10 @@ public interface ISoundPlayer
 {
     void Play(ReadOnlyMemory<byte> pcm, int sampleRate);
     void Stop();
+
+    Task PlayAsync(ReadOnlyMemory<byte> pcm, int sampleRate, CancellationToken ct = default)
+    {
+        Play(pcm, sampleRate);
+        return Task.CompletedTask;
+    }
 }

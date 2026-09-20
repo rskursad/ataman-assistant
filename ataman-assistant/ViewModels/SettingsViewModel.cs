@@ -110,7 +110,15 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnAlwaysListeningChanged(bool value) => MarkDirty();
     partial void OnTranslateToEnglishChanged(bool value) => MarkDirty();
     partial void OnSpeakResponsesChanged(bool value) => MarkDirty();
-    partial void OnSelectedLanguageChanged(LanguageInfo value) => MarkDirty();
+    partial void OnSelectedLanguageChanged(LanguageInfo value)
+    {
+        MarkDirty();
+        if (value is not null)
+        {
+            WakeWord = value.DefaultWakeWord;
+            SelectedVoice = VoiceCatalog.ForId(value.DefaultTtsVoiceId);
+        }
+    }
     partial void OnSelectedVoiceChanged(TtsVoice value) => MarkDirty();
 
     partial void OnSelectedModelChanged(ModelInfo value)
@@ -128,6 +136,16 @@ public partial class SettingsViewModel : ViewModelBase
         if (downloaded && !IsDownloading)
         {
             StatusText = "Model dosyası zaten indirilmiş.";
+        }
+    }
+
+    [RelayCommand]
+    private void SetWakeWordPreset(string word)
+    {
+        if (!string.IsNullOrWhiteSpace(word))
+        {
+            WakeWord = word.Trim();
+            MarkDirty();
         }
     }
 
